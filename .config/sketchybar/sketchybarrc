@@ -1,0 +1,213 @@
+#!/bin/bash
+
+source "$HOME/.config/colors.sh"
+source "$HOME/.config/icons.sh"
+
+PLUGIN_DIR="$HOME/.config/sketchybar/plugins"
+
+TRANSPARENT=0x00000000
+PILL_BG=0xcc1d2021
+PILL_BORDER=0x40fbf1c7
+
+# Bar - fully transparent, items float as pills
+sketchybar --bar height=44                          \
+                  blur_radius=0                      \
+                  position=top                       \
+                  sticky=on                          \
+                  padding_left=10                    \
+                  padding_right=10                   \
+                  color=$TRANSPARENT                 \
+                  shadow=off                         \
+                  y_offset=4
+
+# Defaults
+sketchybar --default padding_left=2                                    \
+                     padding_right=2                                   \
+                                                                       \
+                     background.border_color=$PILL_BORDER              \
+                     background.border_width=1                         \
+                     background.height=30                              \
+                     background.corner_radius=10                       \
+                     background.color=$PILL_BG                         \
+                     background.drawing=off                            \
+                                                                       \
+                     icon.color=$COLOR_FOREGROUND                      \
+                     icon.highlight_color=$COLOR_BACKGROUND            \
+                     icon.padding_left=8                               \
+                     icon.padding_right=2                              \
+                     icon.font="CaskaydiaCove Nerd Font:Regular:14.0"  \
+                                                                       \
+                     label.color=$COLOR_FOREGROUND                     \
+                     label.highlight_color=$COLOR_BACKGROUND           \
+                     label.padding_left=2                              \
+                     label.padding_right=8                             \
+                     label.font="CaskaydiaCove Nerd Font:Regular:12.0"
+
+# Register custom events
+sketchybar --add event aerospace_workspace_change
+sketchybar --add event window_change
+
+# Space items - per monitor
+COLORS_SPACE=($COLOR_YELLOW $COLOR_CYAN $COLOR_MAGENTA $COLOR_WHITE $COLOR_BLUE $COLOR_RED $COLOR_GREEN $COLOR_ACCENT $COLOR_GREEN_BRIGHT)
+
+# Function to add workspace items for a monitor
+add_spaces() {
+  local DISPLAY=$1
+  local OFFSET=$2
+
+  for i in "${!ICONS_SPACE[@]}"
+  do
+    sid=$(($i+1+$OFFSET))
+    PAD_LEFT=1
+    PAD_RIGHT=1
+    if [[ $i == 0 ]]; then
+      PAD_LEFT=4
+    elif [[ $i == 8 ]]; then
+      PAD_RIGHT=4
+    fi
+    sketchybar --add item space.$sid left                                              \
+               --set       space.$sid script="$PLUGIN_DIR/app_space.sh"                \
+                                      display=$DISPLAY                                 \
+                                      padding_left=$PAD_LEFT                           \
+                                      padding_right=$PAD_RIGHT                         \
+                                      background.color=${COLORS_SPACE[i]}              \
+                                      background.border_width=0                        \
+                                      background.corner_radius=8                       \
+                                      background.height=22                             \
+                                      background.drawing=off                           \
+                                      icon=${ICONS_SPACE[i]}                           \
+                                      icon.color=${COLORS_SPACE[i]}                    \
+                                      icon.padding_left=6                              \
+                                      icon.padding_right=2                             \
+                                      label="_"                                        \
+                                      label.color=${COLORS_SPACE[i]}                   \
+                                      label.padding_left=2                             \
+                                      label.padding_right=6                            \
+                                      click_script="aerospace workspace $sid"          \
+               --subscribe space.$sid aerospace_workspace_change
+  done
+}
+
+add_spaces 1 0
+add_spaces 2 10
+
+# Space brackets - floating pills
+sketchybar --add bracket spaces_m1 '/space\.[1-9]$/'                   \
+           --set         spaces_m1 background.color=$PILL_BG            \
+                                   background.corner_radius=12          \
+                                   background.height=30                 \
+                                   background.border_color=$PILL_BORDER \
+                                   background.border_width=1            \
+                                   background.drawing=on                \
+                                   display=1
+
+sketchybar --add bracket spaces_m2 '/space\.1[1-9]/'                   \
+           --set         spaces_m2 background.color=$PILL_BG            \
+                                   background.corner_radius=12          \
+                                   background.height=30                 \
+                                   background.border_color=$PILL_BORDER \
+                                   background.border_width=1            \
+                                   background.drawing=on                \
+                                   display=2
+
+# Front app - floating pill
+sketchybar --add item front_app left                                    \
+           --set      front_app icon.drawing=off                        \
+                                label.font="CaskaydiaCove Nerd Font:Bold:12.0" \
+                                label.color=$COLOR_FOREGROUND           \
+                                label.padding_left=10                   \
+                                label.padding_right=10                  \
+                                background.color=$PILL_BG               \
+                                background.corner_radius=12             \
+                                background.height=30                    \
+                                background.border_color=$PILL_BORDER    \
+                                background.border_width=1               \
+                                background.drawing=on                   \
+                                padding_left=6                          \
+                                script="$PLUGIN_DIR/front_app.sh"       \
+           --subscribe front_app front_app_switched
+
+# Notifications pill - per monitor
+add_notifications() {
+  local NAME=$1
+  local DISPLAY=$2
+  sketchybar --add item $NAME right                                        \
+             --set      $NAME display=$DISPLAY                             \
+                               update_freq=5                               \
+                               icon="󰂞"                                   \
+                               icon.color=$COLOR_RED_BRIGHT                \
+                               icon.padding_left=10                        \
+                               icon.font="CaskaydiaCove Nerd Font:Regular:16.0" \
+                               label.color=$COLOR_FOREGROUND               \
+                               label.padding_right=10                      \
+                               label.font="CaskaydiaCove Nerd Font:Regular:12.0" \
+                               background.color=$PILL_BG                   \
+                               background.corner_radius=12                 \
+                               background.height=30                        \
+                               background.border_color=$COLOR_RED_BRIGHT   \
+                               background.border_width=1                   \
+                               background.drawing=on                       \
+                               drawing=off                                 \
+                               padding_right=6                             \
+                               script="$PLUGIN_DIR/notifications.sh"       \
+                               click_script="$PLUGIN_DIR/notifications_click.sh" \
+                               popup.background.color=0x001d2021           \
+                               popup.background.corner_radius=14           \
+                               popup.background.border_color=0x00fbf1c7    \
+                               popup.background.border_width=1             \
+                               popup.y_offset=-4
+}
+add_notifications notifications_m1 1
+add_notifications notifications_m2 2
+
+# Right side pill - Clock + Battery + CPU + Memory grouped
+sketchybar --add item clock right                                       \
+           --set      clock update_freq=10                              \
+                            icon=$ICON_CLOCK                            \
+                            icon.color=$COLOR_YELLOW                    \
+                            icon.padding_left=10                        \
+                            label.color=$COLOR_FOREGROUND               \
+                            label.padding_right=10                      \
+                            background.drawing=off                      \
+                            script="$PLUGIN_DIR/clock.sh"
+
+sketchybar --add item battery right                                     \
+           --set      battery update_freq=60                            \
+                              icon.color=$COLOR_GREEN                   \
+                              icon.padding_left=10                      \
+                              label.color=$COLOR_FOREGROUND             \
+                              label.padding_right=4                     \
+                              background.drawing=off                    \
+                              script="$PLUGIN_DIR/battery.sh"
+
+sketchybar --add item cpu right                                         \
+           --set      cpu update_freq=5                                 \
+                          icon=$ICON_CPU                                \
+                          icon.color=$COLOR_BLUE_BRIGHT                 \
+                          icon.padding_left=4                           \
+                          label.color=$COLOR_FOREGROUND                 \
+                          label.padding_right=4                         \
+                          background.drawing=off                        \
+                          script="$PLUGIN_DIR/cpu.sh"
+
+sketchybar --add item memory right                                      \
+           --set      memory update_freq=10                             \
+                             icon=$ICON_RAM                             \
+                             icon.color=$COLOR_MAGENTA_BRIGHT           \
+                             icon.padding_left=10                       \
+                             label.color=$COLOR_FOREGROUND              \
+                             label.padding_right=10                     \
+                             background.drawing=off                     \
+                             script="$PLUGIN_DIR/memory.sh"
+
+# Right bracket pill
+sketchybar --add bracket status clock battery cpu memory                \
+           --set         status background.color=$PILL_BG               \
+                                background.corner_radius=12             \
+                                background.height=30                    \
+                                background.border_color=$PILL_BORDER    \
+                                background.border_width=1               \
+                                background.drawing=on
+
+# Force update
+sketchybar --update
