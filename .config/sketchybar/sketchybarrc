@@ -127,13 +127,15 @@ sketchybar --add item front_app left                                    \
                                 script="$PLUGIN_DIR/front_app.sh"       \
            --subscribe front_app front_app_switched
 
-# Notifications pill - per monitor
+# Notifications - per monitor badge pill + banner popup
 add_notifications() {
-  local NAME=$1
+  local ITEM=$1
   local DISPLAY=$2
-  sketchybar --add item $NAME right                                        \
-             --set      $NAME display=$DISPLAY                             \
-                               update_freq=5                               \
+  local FREQ=$3
+  local SCRIPT=$4
+  sketchybar --add item $ITEM right                                        \
+             --set      $ITEM display=$DISPLAY                             \
+                               update_freq=$FREQ                           \
                                icon="󰂞"                                   \
                                icon.color=$COLOR_RED_BRIGHT                \
                                icon.padding_left=10                        \
@@ -149,16 +151,16 @@ add_notifications() {
                                background.drawing=on                       \
                                drawing=off                                 \
                                padding_right=6                             \
-                               script="$PLUGIN_DIR/notifications.sh"       \
-                               click_script="$PLUGIN_DIR/notifications_click.sh" \
-                               popup.background.color=0x001d2021           \
-                               popup.background.corner_radius=14           \
-                               popup.background.border_color=0x00fbf1c7    \
+                               script="$SCRIPT"                            \
+                               popup.background.color=0xe01d2021           \
+                               popup.background.corner_radius=10           \
+                               popup.background.border_color=$PILL_BORDER  \
                                popup.background.border_width=1             \
-                               popup.y_offset=-4
+                               popup.align=right                           \
+                               popup.y_offset=-30
 }
-add_notifications notifications_m1 1
-add_notifications notifications_m2 2
+add_notifications notifications_m1 1 5 "$PLUGIN_DIR/notifications.sh"
+add_notifications notifications_m2 2 0 ""
 
 # Right side pill - Clock + Battery + CPU + Memory grouped
 sketchybar --add item clock right                                       \
